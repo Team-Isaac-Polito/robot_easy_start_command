@@ -1,0 +1,11 @@
+The Host Key trap (SSH): If it is the very first time your Mac or Linux PC connects to that IP (192.168.8.112), or if the Jetson was recently formatted, SSH will ask you to confirm the cryptographic fingerprint by typing "yes". sshpass cannot answer, and the script will fail silently.
+
+    Solution: Log in manually once to save the key, or add the -o StrictHostKeyChecking=no option to the ssh command.
+
+Docker permissions: If the user isaac on the Jetson needs to use sudo to run containers, the command will hang waiting for a password.
+
+    Solution: Make sure the user isaac has been added to the docker group on the Jetson so you can launch containers without root privileges.
+
+Blocked X11 Forwarding: You correctly mapped the .Xauthority file and the /tmp/.X11-unix directory, but graphical interfaces (like Rviz or rqt) can be finicky about video permissions over SSH.
+
+    Solution: If the windows do not appear on your monitor, you might need to run the xhost + command on your local terminal before starting the script.
