@@ -4,8 +4,8 @@
 # TEAM ISAAC POLITO - JETSON RESEQ LOGIN & LAUNCH SCRIPT
 # ==============================================================================
 
-# FASE 1: Creazione e invio comandi in background (senza -t)
-sshpass -p "ciaociao" ssh -X isaac@192.168.8.112 << 'EOF'
+# FASE 1: Creazione in background (-T disabilita il terminale ed evita il warning)
+sshpass -p "ciaociao" ssh -T -X isaac@192.168.8.112 << 'EOF'
 if ! tmux has-session -t robot 2>/dev/null; then
     echo "No active session found. Creating a new tmux 'robot' and starting the container..."
     
@@ -30,6 +30,6 @@ else
 fi
 EOF
 
-# FASE 2: Connessione interattiva vera e propria (con -t, ma usando una singola stringa)
+# FASE 2: Connessione interattiva vera e propria (qui serve -t minuscola per agganciarsi)
 echo "Reconnecting to ROS..."
 sshpass -p "ciaociao" ssh -X -t isaac@192.168.8.112 "tmux attach-session -t robot"
