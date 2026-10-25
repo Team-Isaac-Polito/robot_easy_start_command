@@ -1,18 +1,16 @@
 #!/bin/bash
 
 # ==============================================================================
-# TEAM ISAAC POLITO - JETSON RESEQ LOGIN & LAUNCH SCRIPT
+# TEAM ISAAC POLITO - JETSON RESEQ LAUNCH & LOCAL CONTROLLER SCRIPT
 # ==============================================================================
 
-# FASE 1: Creazione in background (-T disabilita il terminale ed evita il warning)
-sshpass -p "ciaociao" ssh -T -X isaac@192.168.8.112 << 'EOF'
+# FASE 1: Avvia il robot sul Jetson in background
+# Nota: Abbiamo rimosso --volume /dev/input:/dev/input da qui perché sul Jetson è inutile
+echo "Avvio di ROS2 sul Jetson (in background)..."
+sshpass -p "ciaociao" ssh -o StrictHostKeyChecking=no -T -X isaac@192.168.8.112 << 'EOF'
 if ! tmux has-session -t robot 2>/dev/null; then
-    echo "No active session found. Creating a new tmux 'robot' and starting the container..."
-    
-    # Create a background tmux session detached (-d) called "robot"
+    echo "Creazione sessione tmux 'robot' sul Jetson..."
     tmux new-session -d -s robot
-    
-    # Send the command to the new session
     tmux send-keys -t robot 'docker run -it --rm --privileged \
       --volume /lib/modules:/lib/modules:ro \
       --volume /usr/src:/usr/src:ro \
@@ -21,15 +19,19 @@ if ! tmux has-session -t robot 2>/dev/null; then
       --network host \
       -e DISPLAY=$DISPLAY \
       -v /tmp/.X11-unix:/tmp/.X11-unix \
-      --volume /dev/input:/dev/input \
       -v /home/isaac/.Xauthority:/root/.Xauthority:ro \
       reseq-orin \
       /bin/bash -c "source /ros_entrypoint.sh && ros2 launch reseq_ros2 reseq_launch.py config_file:=reseq_mk2_can.yaml sensors:=false cv:=false"' C-m
 else
-    echo "Session 'robot' found. Skipping container start..."
+    echo "Sessione Jetson 'robot' già attiva, salto l'avvio..."
 fi
 EOF
 
-# FASE 2: Connessione interattiva vera e propria (qui serve -t minuscola per agganciarsi)
-echo "Reconnecting to ROS..."
-sshpass -p "ciaociao" ssh -X -t isaac@192.168.8.112 "tmux attach-session -t robot"
+# FASE 2: Legge l'hardware del radiocomando locale (isremotepi) e pubblica sulla LAN
+echo "Aggancio l'hardware locale per guidare il robot..."
+
+docker run -it --rm --network host \
+  --privileged \
+  --volume /dev/input:/dev/input \
+  reseq-orin \
+  /bin/bash -c "source /ros_entrypoint.sh && ros2 run joy joy_node"
